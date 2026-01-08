@@ -11,6 +11,7 @@ import { URL } from 'url';
 import { logger } from '../utils/Logger';
 import { Validator } from '../utils/Validator';
 import { RequestHandler } from './RequestHandler';
+import { ClaudeCodeHandler } from './ClaudeCodeHandler';
 import { ModelDiscoveryService } from '../services/ModelDiscoveryService';
 import { ServerConfig, ServerState } from '../types/VSCode';
 import { 
@@ -25,6 +26,7 @@ import {
 export class CopilotServer {
     private server?: http.Server;
     private requestHandler: RequestHandler;
+    private claudeCodeHandler: ClaudeCodeHandler;
     private modelDiscovery: ModelDiscoveryService;
     private config: ServerConfig;
     private state: ServerState;
@@ -34,6 +36,7 @@ export class CopilotServer {
     constructor() {
         this.requestHandler = new RequestHandler();
         this.modelDiscovery = new ModelDiscoveryService();
+        this.claudeCodeHandler = new ClaudeCodeHandler(this.modelDiscovery);
         this.config = this.loadConfig();
         this.state = {
             isRunning: false,
@@ -220,6 +223,12 @@ export class CopilotServer {
         res: http.ServerResponse,
         requestId: string
     ): Promise<void> {
+        // Check for Claude Code / Anthropic API routes first
+        if (pathname.startsWith('/anthropic/claude/')) {
+            await this.routeClaudeCodeRequest(pathname, method, req, res, requestId);
+            return;
+        }
+        
         switch (pathname) {
             case API_ENDPOINTS.CHAT_COMPLETIONS:
                 if (method === 'POST') {
@@ -272,6 +281,55 @@ export class CopilotServer {
                 
             default:
                 this.sendError(res, HTTP_STATUS.NOT_FOUND, 'Endpoint not found', requestId);
+        }
+    }
+    
+    /**
+     * 🤖 Route Claude Code / Anthropic API requests
+     */
+    private async routeClaudeCodeRequest(
+        pathname: string,
+        method: string,
+        req: http.IncomingMessage,
+        res: http.ServerResponse,
+        requestId: string
+    ): Promise<void> {
+        // Remove /anthropic/claude prefix
+        const path = pathname.replace(/^\/anthropic\/claude(\/v1)?/, '');
+        
+        // Extract model ID from path for GET /models/:model
+        const modelMatch = path.match(/^\/models\/([^/]+)$/);
+        
+        if (path === '/messages') {
+            // POST /anthropic/claude/messages or /anthropic/claude/v1/messages
+            if (method === 'POST') {
+                await this.claudeCodeHandler.handleMessages(req, res, requestId);
+            } else {
+                this.sendError(res, HTTP_STATUS.METHOD_NOT_ALLOWED, 'Method not allowed', requestId);
+            }
+        } else if (path === '/messages/count_tokens') {
+            // POST /anthropic/claude/messages/count_tokens or /anthropic/claude/v1/messages/count_tokens
+            if (method === 'POST') {
+                await this.claudeCodeHandler.handleCountTokens(req, res, requestId);
+            } else {
+                this.sendError(res, HTTP_STATUS.METHOD_NOT_ALLOWED, 'Method not allowed', requestId);
+            }
+        } else if (path === '/models') {
+            // GET /anthropic/claude/models or /anthropic/claude/v1/models
+            if (method === 'GET') {
+                await this.claudeCodeHandler.handleModels(req, res, requestId);
+            } else {
+                this.sendError(res, HTTP_STATUS.METHOD_NOT_ALLOWED, 'Method not allowed', requestId);
+            }
+        } else if (modelMatch) {
+            // GET /anthropic/claude/models/:model or /anthropic/claude/v1/models/:model
+            if (method === 'GET') {
+                await this.claudeCodeHandler.handleGetModel(req, res, requestId, modelMatch[1]);
+            } else {
+                this.sendError(res, HTTP_STATUS.METHOD_NOT_ALLOWED, 'Method not allowed', requestId);
+            }
+        } else {
+            this.sendError(res, HTTP_STATUS.NOT_FOUND, 'Endpoint not found', requestId);
         }
     }
     

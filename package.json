@@ -96,6 +96,16 @@
           "minimum": 60000,
           "maximum": 3600000,
           "description": "Model health check interval in milliseconds (default: 10 minutes)"
+        },
+        "copilot-lmapi.claudeCode.backgroundModelId": {
+          "type": "string",
+          "default": "",
+          "description": "Model ID for Claude Code background tasks (haiku requests). Leave empty to use requested model directly."
+        },
+        "copilot-lmapi.claudeCode.thinkingModelId": {
+          "type": "string",
+          "default": "",
+          "description": "Model ID for Claude Code thinking tasks (sonnet/opus requests). Leave empty to use requested model directly."
         }
       }
     },
@@ -123,7 +133,7 @@
     "pretest": "npm run compile && npm run lint",
     "lint": "eslint src --ext ts",
     "test": "node ./out/test/runTest.js",
-    "package": "vsce package"
+    "package": "npm run compile && vsce package --out ./"
   },
   "devDependencies": {
     "@types/vscode": "^1.92.0",
