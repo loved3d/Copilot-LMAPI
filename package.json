@@ -2,7 +2,7 @@
   "name": "copilot-lmapi-bridge",
   "displayName": "Copilot-LMAPI",
   "description": "Bridge VS Code Copilot Language Model API to OpenAI-compatible HTTP API",
-  "version": "0.3.2",
+  "version": "0.4.0",
   "publisher": "copilot-bridge",
   "engines": {
     "vscode": "^1.92.0"
@@ -96,6 +96,16 @@
           "minimum": 60000,
           "maximum": 3600000,
           "description": "Model health check interval in milliseconds (default: 10 minutes)"
+        },
+        "copilot-lmapi.claudeCode.backgroundModelId": {
+          "type": "string",
+          "default": "",
+          "description": "Claude Code background model ID (for haiku requests). Leave empty to use first available model. Examples: gpt-4o, claude-3.5-sonnet"
+        },
+        "copilot-lmapi.claudeCode.thinkingModelId": {
+          "type": "string",
+          "default": "",
+          "description": "Claude Code thinking model ID (for sonnet/opus requests). Leave empty to use first available model. Examples: claude-3.5-sonnet, gpt-4o"
         }
       }
     },
