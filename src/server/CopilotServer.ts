@@ -11,6 +11,7 @@ import { URL } from 'url';
 import { logger } from '../utils/Logger';
 import { Validator } from '../utils/Validator';
 import { RequestHandler } from './RequestHandler';
+import { ClaudeCodeHandler } from '../handlers/ClaudeCodeHandler';
 import { ModelDiscoveryService } from '../services/ModelDiscoveryService';
 import { ServerConfig, ServerState } from '../types/VSCode';
 import { 
@@ -25,6 +26,7 @@ import {
 export class CopilotServer {
     private server?: http.Server;
     private requestHandler: RequestHandler;
+    private claudeCodeHandler: ClaudeCodeHandler;
     private modelDiscovery: ModelDiscoveryService;
     private config: ServerConfig;
     private state: ServerState;
@@ -34,6 +36,7 @@ export class CopilotServer {
     constructor() {
         this.requestHandler = new RequestHandler();
         this.modelDiscovery = new ModelDiscoveryService();
+        this.claudeCodeHandler = new ClaudeCodeHandler(this.modelDiscovery);
         this.config = this.loadConfig();
         this.state = {
             isRunning: false,
@@ -220,6 +223,22 @@ export class CopilotServer {
         res: http.ServerResponse,
         requestId: string
     ): Promise<void> {
+        // 🎨 尝试 Claude Code 路由
+        if (pathname.startsWith('/anthropic/claude')) {
+            const handled = await this.claudeCodeHandler.handleRequest(
+                pathname,
+                method,
+                req,
+                res,
+                requestId
+            );
+            
+            if (handled) {
+                return;
+            }
+        }
+        
+        // OpenAI 兼容端点
         switch (pathname) {
             case API_ENDPOINTS.CHAT_COMPLETIONS:
                 if (method === 'POST') {

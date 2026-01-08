@@ -8,6 +8,7 @@ import * as vscode from 'vscode';
 // 🎯 动态模型能力
 export interface ModelCapabilities {
     id: string;
+    name?: string;
     family?: string;
     vendor?: string;
     version?: string;
