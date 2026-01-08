@@ -238,6 +238,17 @@ export class CopilotServer {
             }
         }
         
+        // Anthropic 兼容端点
+        if (pathname === '/v1/messages' && method === 'POST') {
+            await this.claudeCodeHandler.handleMessages(req, res, requestId);
+            return;
+        }
+        
+        if (pathname === '/v1/messages/count_tokens' && method === 'POST') {
+            await this.claudeCodeHandler.handleCountTokens(req, res, requestId);
+            return;
+        }
+        
         // OpenAI 兼容端点
         switch (pathname) {
             case API_ENDPOINTS.CHAT_COMPLETIONS:

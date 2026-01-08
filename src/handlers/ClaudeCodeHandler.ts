@@ -39,7 +39,7 @@ export class ClaudeCodeHandler {
         
         // 匹配路径和方法
         if (method === 'POST') {
-            if (pathname === '/anthropic/claude/messages' || pathname === '/anthropic/claude/v1/messages') {
+            if (pathname === '/anthropic/claude/messages' || pathname === '/anthropic/claude/v1/messages' || pathname === '/v1/messages') {
                 await this.handleMessages(req, res, requestId);
                 return true;
             }
@@ -71,7 +71,7 @@ export class ClaudeCodeHandler {
     /**
      * 处理 /anthropic/claude/v1/messages
      */
-    private async handleMessages(
+    public async handleMessages(
         req: http.IncomingMessage,
         res: http.ServerResponse,
         requestId: string
@@ -303,7 +303,7 @@ export class ClaudeCodeHandler {
     /**
      * 处理 /anthropic/claude/v1/messages/count_tokens
      */
-    private async handleCountTokens(
+    public async handleCountTokens(
         req: http.IncomingMessage,
         res: http.ServerResponse,
         requestId: string
